@@ -5,6 +5,7 @@
 const SERVER_URL = "https://ey.sandcats.io";
 const START_URL = "https://ey.sandcats.io/grain/yj2LeFtyv8KrzucRR78cvp";
 const SEND_EMAIL_URL = "https://ey.sandcats.io/admin/users/invite";
+const SUGGESTEE_DATA_URL = "https://ey.sandcats.io/grain/Na3CDn7dXPibTf9hyAxr6m/";
 const CONF_FILE = "typer_suggest.conf";
 const CONF_HANDLED = "handled";
 
@@ -84,26 +85,13 @@ function execute() {
                     }
                     return -1;
                 });
-            }, [seeList, redirectToLogin], 10000);
+            }, [seeSuggesterList, redirectToLogin], 10000);
         }
     });
 }
 
-function seeList() {
-    console.log('Checking records...');
-    var records = page.evaluate(function () {
-        var $records = $($('.grain-frame')[0].contentDocument.documentElement).find('tbody tr');
-        var records = [];
-        $records.each(function (index, ele) {
-            var $tds = $(ele).children('td');
-            var record = {};
-            record.suggester = $tds.eq(0).html();
-            record.suggestee = $tds.eq(1).html();
-            record.mail = $tds.eq(2).html();
-            records.push(record);
-        });
-        return records;
-    });
+function seeSuggesterList() {
+    seeList();
     if (config(CONF_HANDLED) === undefined) {
         system.stdout.write("How many records is handled, so I don't need to send e-mails" +
             " again? (0): ");
@@ -122,6 +110,45 @@ function seeList() {
     } else {
         openEMailPage(records.slice(fHandled));
     }
+}
+
+function seeSuggesteeList() {
+    seeList();
+    if (config(CONF_HANDLED) === undefined) {
+        system.stdout.write("How many records is handled, so I don't need to send e-mails" +
+            " again? (0): ");
+        var d_handled = system.stdin.readLine();
+        if (!parseInt(d_handled)) {
+            d_handled = 0;
+        }
+        config(CONF_HANDLED, parseInt(d_handled));
+    }
+    fHandled = config(CONF_HANDLED);
+
+    console.log(records.length + " records with " + fHandled + " already handled, " +
+        (records.length - fHandled) + " to go.");
+    if (records.length <= fHandled) {
+        checkSuggestee();
+    } else {
+        openEMailPage(records.slice(fHandled));
+    }
+}
+
+function seeList() {
+    console.log('Checking records...');
+    var records = page.evaluate(function () {
+        var $records = $($('.grain-frame')[0].contentDocument.documentElement).find('tbody tr');
+        var records = [];
+        $records.each(function (index, ele) {
+            var $tds = $(ele).children('td');
+            var record = {};
+            record.suggester = $tds.eq(0).html();
+            record.suggestee = $tds.eq(1).html();
+            record.mail = $tds.eq(2).html();
+            records.push(record);
+        });
+        return records;
+    });
 }
 
 function openEMailPage(targets) {
@@ -192,6 +219,37 @@ function sendRealKeyboardEvent() {
 }
 
 function checkSuggestee() {
+    page.open(SUGGESTEE_DATA_URL, function (status) {
+        if (status !== "success") {
+            console.log("Unable to access network");
+        } else {
+            console.log('Loading suggestees...');
+            waitFor(function () {
+                page.render('debug-2.png');
+                return page.evaluate(function () {
+                    var $cont = $('.grain-frame');
+                    if ($cont.size() > 0) {
+                        var frameDoc = $cont[0].contentDocument;
+                        if (frameDoc === null) {
+                            return false;
+                        }
+                        var frameEle = frameDoc.documentElement;
+                        var $frame = $(frameEle);
+
+                        var $resp = $frame.find('.navigation__item:contains(Responses)');
+                        if ($resp.size() > 0) {
+                            $resp[0].click();
+                        }
+                        var $mc = $frame.find('.main-content table');
+                        if ($mc.size() > 0) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+            }, seeSuggesteeList, 10000);
+        }
+    });
     finish();
 }
 
