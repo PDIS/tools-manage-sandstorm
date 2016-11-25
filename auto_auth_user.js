@@ -80,7 +80,7 @@ function waitFiltering(retry) {
         var links = [];
         $('.identity-intrinsic-name').each(function (index, ele) {
             var email = $(ele).html();
-            if (email.match(/gov\.tw$/) || email.match(/sinica\.edu\.tw/)) {
+            if (email.match(/gov\.tw$/) || email.match(/sinica\.edu\.tw$/)) {
                 links.push($(ele).parents('.identities').siblings('.actions').children('.manage-user-button')
                     .attr('href'));
             }
