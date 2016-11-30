@@ -9,14 +9,17 @@ const SEND_EMAIL_URL = "https://ey.sandcats.io/admin/users/invite";
 const CONF_FILE = "typer_suggest.conf";
 const CONF_HANDLED = "handled";
 
-const SUBJECT = "行政院公共數位創新空間(PDIS)小組";
+function generateSubject(suggester) {
+    return suggester + "推薦您成為政府的速錄師，歡迎您的參加!";
+}
 function generateSuggestBody(suggester, suggestee) {
-    return "敬啟者:\
+    return "敬啟者:\n\
 \n\
-        我們是行政院成立的公共數位創新空間(PDIS)小組，由唐鳳政務委員親自督導，為了實踐開放政府的理念，將鼓勵各機關將攸關公眾權益的會議實況以文字完整呈現，因此政府亟需眾多速錄專家的協助。本小組經由"
+　　我們是行政院成立的公共數位創新空間(PDIS)小組，由唐鳳政務委員親自督導，為了實踐開放政府的理念，將鼓勵各機關將攸關公眾權益的會議實況以文字完整呈現，因此政府亟需眾多速錄專家的協助。本小組經由"
     + suggester +
-        "的推薦與您聯繫，如果您願意從事這項工作，我們將於徵得您的同意後，將您聯絡方式等個人資料提供予需求機關查詢。誠心歡迎您的加入。\
-您可經由下列網址提供個人資訊，如有任何疑問，可撥打行政院總機02-3356-6500，分機6577、6578詢問，謝謝您。";
+        "的推薦與您聯繫，如果您願意從事這項工作，我們將於徵得您的同意後，將您聯絡方式等個人資料提供予需求機關查詢。誠心歡迎您的加入。\n\
+您可經由下列網址提供個人資訊，如有任何疑問，可撥打行政院總機02-3356-6500，分機6577、6578詢問，謝謝您。\n\
+https://e5yxfs7ao6yuuxada3tp.ey.sandcats.io/privacy_agreement.html";
 }
 
 var fHandled = 0;
@@ -35,6 +38,7 @@ page.viewportSize = {width: 1024, height: 1400};
 //    page.render('error.png');
 // };
 
+changeToSameDirectory();
 init();
 execute();
 
@@ -152,8 +156,8 @@ function sendEmail(targets, cursor) {
         console.log('All mails sent.');
         finish();
     }
-    console.log('Sending mail #' + (cursor + 1) + '/' + targets.length + ' to '
-    + targets[cursor].suggestee + '(' + targets[cursor].mail + ')...');
+    console.log('Sending mail #' + (cursor + 1) + '/' + targets.length
+        + ' to ' + targets[cursor].mail + '...');
     var target = targets[cursor];
     page.evaluate(function (target) {
             $('.to-addresses').focus();
@@ -173,7 +177,7 @@ function sendEmail(targets, cursor) {
             $('[name=subject]').focus();
             $('[name=subject]').val(subject);
         },
-        SUBJECT
+        generateSubject(target.suggester)
     );
     sendRealKeyboardEvent();
     waitFor(function () {
@@ -303,6 +307,19 @@ function config(key, value) {
     var f = fs.open(CONF_FILE, 'w');
     f.write(JSON.stringify(fConfig));
     f.close();
+}
+
+function changeToSameDirectory() {
+    // Since Casper has control, the invoked script is deep in the argument stack
+    var sysargs = require('system').args;
+    var currentFile = sysargs[sysargs.length - 1];
+    var curFilePath = fs.absolute(currentFile).split('/');
+
+    // I only bother to change the directory if we weren't already there when invoking casperjs
+    if (curFilePath.length > 1) {
+        curFilePath.pop(); // PhantomJS does not have an equivalent path.baseName()-like method
+        fs.changeWorkingDirectory(curFilePath.join('/'));
+    }
 }
 
 function finish() {
