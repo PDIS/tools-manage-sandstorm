@@ -5,13 +5,18 @@
 const SERVER_URL = "https://ey.sandcats.io";
 const START_URL = "https://ey.sandcats.io/grain/yj2LeFtyv8KrzucRR78cvp";
 const SEND_EMAIL_URL = "https://ey.sandcats.io/admin/users/invite";
-const SUGGESTEE_DATA_URL = "https://ey.sandcats.io/grain/Na3CDn7dXPibTf9hyAxr6m/";
+// const SUGGESTEE_DATA_URL = "https://ey.sandcats.io/grain/Na3CDn7dXPibTf9hyAxr6m/";
 const CONF_FILE = "typer_suggest.conf";
 const CONF_HANDLED = "handled";
 
-const SUBJECT = "標題";
+const SUBJECT = "行政院公共數位創新空間(PDIS)小組";
 function generateSuggestBody(suggester, suggestee) {
-    return suggester + "推薦您以下略";
+    return "敬啟者:\
+\n\
+        我們是行政院成立的公共數位創新空間(PDIS)小組，由唐鳳政務委員親自督導，為了實踐開放政府的理念，將鼓勵各機關將攸關公眾權益的會議實況以文字完整呈現，因此政府亟需眾多速錄專家的協助。本小組經由"
+    + suggester +
+        "的推薦與您聯繫，如果您願意從事這項工作，我們將於徵得您的同意後，將您聯絡方式等個人資料提供予需求機關查詢。誠心歡迎您的加入。\
+您可經由下列網址提供個人資訊，如有任何疑問，可撥打行政院總機02-3356-6500，分機6577、6578詢問，謝謝您。";
 }
 
 var fHandled = 0;
@@ -21,13 +26,14 @@ var system = require('system');
 var fs = require('fs');
 var page = require('webpage').create();
 page.viewportSize = {width: 1024, height: 1400};
-//page.onConsoleMessage = function (msg) {
+
+// page.onConsoleMessage = function (msg) {
 //    console.log(msg);
-//};
-//page.onResourceError = function (resourceError) {
+// };
+// page.onResourceError = function (resourceError) {
 //    console.error(resourceError.url + ': ' + resourceError.errorString);
 //    page.render('error.png');
-//};
+// };
 
 init();
 execute();
@@ -91,50 +97,6 @@ function execute() {
 }
 
 function seeSuggesterList() {
-    seeList();
-    if (config(CONF_HANDLED) === undefined) {
-        system.stdout.write("How many records is handled, so I don't need to send e-mails" +
-            " again? (0): ");
-        var d_handled = system.stdin.readLine();
-        if (!parseInt(d_handled)) {
-            d_handled = 0;
-        }
-        config(CONF_HANDLED, parseInt(d_handled));
-    }
-    fHandled = config(CONF_HANDLED);
-
-    console.log(records.length + " records with " + fHandled + " already handled, " +
-        (records.length - fHandled) + " to go.");
-    if (records.length <= fHandled) {
-        checkSuggestee();
-    } else {
-        openEMailPage(records.slice(fHandled));
-    }
-}
-
-function seeSuggesteeList() {
-    seeList();
-    if (config(CONF_HANDLED) === undefined) {
-        system.stdout.write("How many records is handled, so I don't need to send e-mails" +
-            " again? (0): ");
-        var d_handled = system.stdin.readLine();
-        if (!parseInt(d_handled)) {
-            d_handled = 0;
-        }
-        config(CONF_HANDLED, parseInt(d_handled));
-    }
-    fHandled = config(CONF_HANDLED);
-
-    console.log(records.length + " records with " + fHandled + " already handled, " +
-        (records.length - fHandled) + " to go.");
-    if (records.length <= fHandled) {
-        checkSuggestee();
-    } else {
-        openEMailPage(records.slice(fHandled));
-    }
-}
-
-function seeList() {
     console.log('Checking records...');
     var records = page.evaluate(function () {
         var $records = $($('.grain-frame')[0].contentDocument.documentElement).find('tbody tr');
@@ -149,6 +111,25 @@ function seeList() {
         });
         return records;
     });
+
+    if (config(CONF_HANDLED) === undefined) {
+        system.stdout.write("How many records is handled, so I don't need to send e-mails" +
+            " again? (0): ");
+        var d_handled = system.stdin.readLine();
+        if (!parseInt(d_handled)) {
+            d_handled = 0;
+        }
+        config(CONF_HANDLED, parseInt(d_handled));
+    }
+    fHandled = config(CONF_HANDLED);
+
+    console.log(records.length + " records with " + fHandled + " already handled, " +
+        (records.length - fHandled) + " to go.");
+    if (records.length <= fHandled) {
+        finish();
+    } else {
+        openEMailPage(records.slice(fHandled));
+    }
 }
 
 function openEMailPage(targets) {
@@ -169,7 +150,7 @@ function sendEmail(targets, cursor) {
         // Update recording how many records we have handled
         config(CONF_HANDLED, targets.length + fHandled);
         console.log('All mails sent.');
-        checkSuggestee();
+        finish();
     }
     console.log('Sending mail #' + (cursor + 1) + '/' + targets.length + ' to '
     + targets[cursor].suggestee + '(' + targets[cursor].mail + ')...');
@@ -218,41 +199,6 @@ function sendRealKeyboardEvent() {
     page.sendEvent('keypress', page.event.key.Backspace);
 }
 
-function checkSuggestee() {
-    page.open(SUGGESTEE_DATA_URL, function (status) {
-        if (status !== "success") {
-            console.log("Unable to access network");
-        } else {
-            console.log('Loading suggestees...');
-            waitFor(function () {
-                page.render('debug-2.png');
-                return page.evaluate(function () {
-                    var $cont = $('.grain-frame');
-                    if ($cont.size() > 0) {
-                        var frameDoc = $cont[0].contentDocument;
-                        if (frameDoc === null) {
-                            return false;
-                        }
-                        var frameEle = frameDoc.documentElement;
-                        var $frame = $(frameEle);
-
-                        var $resp = $frame.find('.navigation__item:contains(Responses)');
-                        if ($resp.size() > 0) {
-                            $resp[0].click();
-                        }
-                        var $mc = $frame.find('.main-content table');
-                        if ($mc.size() > 0) {
-                            return true;
-                        }
-                    }
-                    return false;
-                });
-            }, seeSuggesteeList, 10000);
-        }
-    });
-    finish();
-}
-
 function redirectToLogin() {
     page.open(SERVER_URL, function (status) {
         if (status !== "success") {
@@ -275,11 +221,7 @@ function login() {
         $('[name=email]').val(email);
         $('.login.email').click();
     }, email);
-    waitFor(function () {
-        return page.evaluate(function () {
-            return $('p:contains(sent a login e-mail to)').size() > 0;
-        });
-    }, function () {
+    waitFor('p:contains(sent a login)', function () {
         page.render('login.png');
         var error = page.evaluate(function () {
             return $('.error-message').html();
