@@ -8,6 +8,7 @@ const SEND_EMAIL_URL = "https://ey.sandcats.io/admin/users/invite";
 // const SUGGESTEE_DATA_URL = "https://ey.sandcats.io/grain/Na3CDn7dXPibTf9hyAxr6m/";
 const CONF_FILE = "typer_suggest.conf";
 const CONF_HANDLED = "handled";
+const WILDCARD_DOMAIN_PREFIX = 'wildcard_domain:';
 
 function generateSubject(suggester) {
     return suggester + "推薦您成為政府的速錄師，歡迎您的參加!";
@@ -40,6 +41,7 @@ page.viewportSize = {width: 1024, height: 1400};
 
 changeToSameDirectory();
 init();
+checkEtcHost();
 execute();
 
 function init() {
@@ -320,6 +322,33 @@ function changeToSameDirectory() {
         curFilePath.pop(); // PhantomJS does not have an equivalent path.baseName()-like method
         fs.changeWorkingDirectory(curFilePath.join('/'));
     }
+}
+
+// Sandstorm machine should write *.ey.sandcats.io to /etc/hosts
+function checkEtcHost() {
+    page.onResourceRequested = function(requestData, networkRequest) {
+        var pattern = /https?:\/\/(.+)\.ey\.sandcats\.io/;
+        var match = pattern.exec(requestData.url);
+        if (match !== null && match[1]) {
+            if (config(WILDCARD_DOMAIN_PREFIX + match[1]) === undefined) {
+                if (fs.isFile('/etc/hosts')) {
+                    var hosts = fs.open('/etc/hosts', 'r');
+                    var current = hosts.read();
+                    hosts.close();
+                    if (current.indexOf(match[1] + ".ey.sandcats.io") < 0) {
+                        // append
+                        var ahosts = fs.open('/etc/hosts', 'a');
+                        if (current[current.length - 1] != '\n') {
+                            ahosts.write('\n');
+                        }
+                        ahosts.write('10.20.124.1\t' + match[1] + '.ey.sandcats.io' + '\n');
+                        ahosts.close();
+                    }
+                    config(WILDCARD_DOMAIN_PREFIX + match[1], true);
+                }
+            }
+        }
+    };
 }
 
 function finish() {
