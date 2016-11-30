@@ -95,7 +95,7 @@ function execute() {
                     }
                     return -1;
                 });
-            }, [seeSuggesterList, redirectToLogin], 30000);
+            }, [seeSuggesterList, redirectToLogin], 20000);
         }
     });
 }
@@ -191,7 +191,7 @@ function sendEmail(targets, cursor) {
         waitFor('.flash-message', function () {
             page.render('send' + cursor + '.png');
             sendEmail(targets, cursor + 1);
-        }, 30000);
+        }, 20000);
     });
 }
 
