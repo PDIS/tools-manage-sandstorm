@@ -14,7 +14,9 @@ phantomjs /etc/auto_auth_user.js --cookies-file=/etc/auto_auth_user.cookie
 https://github.com/PDIS/tools-manage-sandstorm/blob/master/typer_suggest.js
 </p>
 <p>
-讀取速記聯絡人推薦表單的資料，然後寄信給被推薦人的工具<br>執行環境和認證等和auto_auth_user一樣，但指令因為牽扯到 cross-domain ，需要加上 --web-security=no：<br>
+讀取速記聯絡人推薦表單的資料，然後寄信給被推薦人的工具<br>
+本程式會產生 typer_suggest.conf 檔案，記錄已經處理到第幾筆紀錄。<br>
+執行環境和認證等和auto_auth_user一樣，但指令因為牽扯到 cross-domain ，需要加上 --web-security=no：<br>
 <pre>
 phantomjs /etc/typer_suggest.js --web-security=no --cookies-file=/etc/typer_suggest.cookie
 </pre>
