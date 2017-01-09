@@ -19,6 +19,7 @@ function execute() {
     page.open(SERVER_URL + '/admin/users', function (status) {
         if (status !== "success") {
             console.log("Unable to access network");
+            phantom.exit(1);
         } else {
             waitFor(function () {
                 return page.evaluate(function () {
@@ -38,6 +39,7 @@ function waitForCheckbox() {
     page.open(SERVER_URL + '/admin/users', function (status) {
         if (status !== "success") {
             console.log("Unable to access network");
+            phantom.exit(1);
         } else {
             waitFor(function () {
                 return page.evaluate(function () {
@@ -101,6 +103,7 @@ function promoteToUser(cursor) {
     page.open(SERVER_URL + link, function (status) {
         if (status !== "success") {
             console.log("Unable to access network");
+            phantom.exit(1);
         } else {
             waitFor(function () {
                 return page.evaluate(function () {
@@ -126,6 +129,7 @@ function redirectToLogin() {
     page.open(SERVER_URL, function (status) {
         if (status !== "success") {
             console.log("Unable to access network");
+            phantom.exit(1);
         } else {
             waitFor(function () {
                 return page.evaluate(function () {
