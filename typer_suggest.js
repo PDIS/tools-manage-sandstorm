@@ -66,6 +66,7 @@ function execute() {
     page.open(START_URL, function (status) {
         if (status !== "success") {
             console.log("Unable to access network");
+            phantom.exit(1);
         } else {
             console.log('Loading...');
             waitFor(function () {
@@ -143,6 +144,7 @@ function openEMailPage(targets) {
     page.open(SEND_EMAIL_URL, function (status) {
         if (status !== "success") {
             console.log("Unable to access network");
+            phantom.exit(1);
         } else {
             waitFor('.to-addresses', function () {
                 sendEmail(targets, 0);
@@ -209,6 +211,7 @@ function redirectToLogin() {
     page.open(SERVER_URL, function (status) {
         if (status !== "success") {
             console.log("Unable to access network");
+            phantom.exit(1);
         } else {
             page.render('waitToLogin.png');
             waitFor(function () {
